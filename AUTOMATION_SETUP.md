@@ -43,7 +43,7 @@ Your repository should now have:
 ## 🏗️ Step 3: Configure Jenkins
 
 ### 3.1 Verify Jenkins Job
-1. Go to: http://35.154.42.145:8080
+1. Go to: http://13.203.228.92/:8080
 2. Find your job: **"First pipeline job"**
 3. Make sure it's configured to use the updated Jenkinsfile
 

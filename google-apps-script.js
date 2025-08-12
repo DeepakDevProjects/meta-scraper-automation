@@ -7,7 +7,7 @@ function onOpen() {
 }
 
 function triggerJenkins() {
-  const jenkinsBaseUrl = 'http://35.154.42.145:8080';
+  const jenkinsBaseUrl = 'http://13.203.228.92/:8080';
   const jobName = 'First%20pipeline%20job';
   const username = 'admin';
   const apiToken = '111300ea72005c6d3aaa3a71e23be3da2a';

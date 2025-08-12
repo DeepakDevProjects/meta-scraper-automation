@@ -10,7 +10,7 @@ pipeline {
         // Environment variables for the application
         SPREADSHEET_ID = '1u_6w8LhMj-zg8qQxg71zNRmdzdbVPDm1UKDNj_9IAtg'
         SHEET_NAME = 'Meta-Keywords-sheet'
-        // Jenkins will automatically set this path when credentials are bound
+        // Jenkins will need access to credentials.json
         GOOGLE_APPLICATION_CREDENTIALS = "${WORKSPACE}/credentials.json"
     }
 
@@ -31,20 +31,11 @@ pipeline {
         stage('Setup Credentials') {
             steps {
                 script {
-                    echo '�� Setting up Google Service Account credentials...'
-                    
-                    // This stage will be handled by Jenkins Credentials Manager
-                    // The credentials.json file will be automatically available
-                    // when the job is configured with the credential binding
-                    
+                    // Check if credentials file exists
                     if (fileExists('credentials.json')) {
-                        echo '✅ Credentials file found and ready'
-                        // Display credential info (without sensitive data)
-                        def credentials = readJSON file: 'credentials.json'
-                        echo "📧 Service Account: ${credentials.client_email}"
-                        echo "🆔 Project ID: ${credentials.project_id}"
+                        echo '✅ Credentials file found'
                     } else {
-                        error '❌ Credentials file not found. Please configure Jenkins Credentials Manager with your Google service account key.'
+                        error '❌ Credentials file not found. Please add credentials.json to the repository or configure it in Jenkins.'
                     }
                 }
             }
@@ -61,13 +52,8 @@ pipeline {
                 script {
                     try {
                         echo '🚀 Starting Meta Scraper Automation...'
-                        echo "📊 Target Spreadsheet: ${SPREADSHEET_ID}"
-                        echo "📋 Sheet Name: ${SHEET_NAME}"
-                        
                         sh 'npm start'
-                        
                         echo '✅ Meta Scraper completed successfully!'
-                        echo '📝 Results have been updated in the Google Sheet'
                     } catch (error) {
                         echo "❌ Meta Scraper failed: ${error}"
                         currentBuild.result = 'FAILURE'
@@ -86,20 +72,9 @@ pipeline {
         }
         success {
             echo '🎉 Pipeline completed successfully!'
-            echo '📊 Meta keywords have been scraped and updated in Google Sheet'
         }
         failure {
             echo '💥 Pipeline failed!'
-            echo '🔍 Check the build logs for detailed error information'
-        }
-        cleanup {
-            // Clean up any sensitive files
-            script {
-                if (fileExists('credentials.json')) {
-                    sh 'rm -f credentials.json'
-                    echo '🧹 Credentials file cleaned up'
-                }
-            }
         }
     }
 }

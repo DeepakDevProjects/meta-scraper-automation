@@ -10,7 +10,7 @@ pipeline {
         // Environment variables for the application
         SPREADSHEET_ID = '1u_6w8LhMj-zg8qQxg71zNRmdzdbVPDm1UKDNj_9IAtg'
         SHEET_NAME = 'Meta-Keywords-sheet'
-        // Jenkins will automatically set this path when credentials are bound
+        // Credentials will be injected by Jenkins
         GOOGLE_APPLICATION_CREDENTIALS = "${WORKSPACE}/credentials.json"
     }
 
@@ -31,20 +31,23 @@ pipeline {
         stage('Setup Credentials') {
             steps {
                 script {
-                    echo '�� Setting up Google Service Account credentials...'
+                    echo '🔐 Setting up Google Service Account credentials...'
                     
-                    // This stage will be handled by Jenkins Credentials Manager
-                    // The credentials.json file will be automatically available
-                    // when the job is configured with the credential binding
-                    
-                    if (fileExists('credentials.json')) {
-                        echo '✅ Credentials file found and ready'
-                        // Display credential info (without sensitive data)
-                        def credentials = readJSON file: 'credentials.json'
-                        echo "📧 Service Account: ${credentials.client_email}"
-                        echo "🆔 Project ID: ${credentials.project_id}"
-                    } else {
-                        error '❌ Credentials file not found. Please configure Jenkins Credentials Manager with your Google service account key.'
+                    // Bind credentials from Jenkins Credentials Manager
+                    withCredentials([file(credentialsId: 'google-service-account-key', variable: 'GOOGLE_CREDENTIALS')]) {
+                        // Copy credentials to workspace
+                        sh 'cp $GOOGLE_CREDENTIALS credentials.json'
+                        sh 'chmod 600 credentials.json'
+                        
+                        // Verify credentials
+                        if (fileExists('credentials.json')) {
+                            echo '✅ Credentials file created successfully'
+                            def credentials = readJSON file: 'credentials.json'
+                            echo "📧 Service Account: ${credentials.client_email}"
+                            echo "🆔 Project ID: ${credentials.project_id}"
+                        } else {
+                            error '❌ Failed to create credentials file'
+                        }
                     }
                 }
             }
@@ -93,7 +96,7 @@ pipeline {
             echo '🔍 Check the build logs for detailed error information'
         }
         cleanup {
-            // Clean up any sensitive files
+            // Clean up sensitive files
             script {
                 if (fileExists('credentials.json')) {
                     sh 'rm -f credentials.json'
