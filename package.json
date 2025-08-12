@@ -2,23 +2,27 @@
   "name": "meta-scraper-automation",
   "version": "1.0.0",
   "description": "Scrapes meta keywords from URLs in a Google Sheet.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node src/index.js"
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
   },
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.0",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
+    "formdata-node": "^6.0.3",
     "googleapis": "^120.0.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.14.9",
+    "@types/node": "^20.19.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

@@ -3,7 +3,7 @@ pipeline {
 
     // Defines the Node.js version to use.
     tools {
-        nodejs 'node-18' 
+        nodejs 'node-20' 
     }
 
     stages {
