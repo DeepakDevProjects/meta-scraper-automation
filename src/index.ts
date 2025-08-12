@@ -17,25 +17,81 @@ console.log(myFile.size); // 12
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1u_6w8LhMj-zg8qQxg71zNRmdzdbVPDm1UKDNj_9IAtg';
 const SHEET_NAME = process.env.SHEET_NAME || 'Meta-Keywords-sheet';
 const CREDENTIALS_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(__dirname, '../credentials.json');
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
-// Check if credentials file exists
-if (!fs.existsSync(CREDENTIALS_PATH)) {
-    console.error(`❌ Credentials file not found at: ${CREDENTIALS_PATH}`);
-    console.error('Please ensure you have:');
-    console.error('1. Created a Google Service Account');
-    console.error('2. Downloaded the credentials.json file');
-    console.error('3. Placed it in the project root directory');
-    console.error('4. Or set the GOOGLE_APPLICATION_CREDENTIALS environment variable');
-    process.exit(1);
+// Demo URLs for testing
+const DEMO_URLS = [
+    'https://www.google.com',
+    'https://www.github.com',
+    'https://www.stackoverflow.com'
+];
+
+// Declare sheets at module level
+let sheets: any = null;
+
+if (DEMO_MODE) {
+    console.log('🎭 Running in DEMO MODE - No Google Sheets integration');
+    runDemoMode();
+} else {
+    // Check if credentials file exists
+    if (!fs.existsSync(CREDENTIALS_PATH)) {
+        console.error(`❌ Credentials file not found at: ${CREDENTIALS_PATH}`);
+        console.error('Please ensure you have:');
+        console.error('1. Created a Google Service Account');
+        console.error('2. Downloaded the credentials.json file');
+        console.error('3. Placed it in the project root directory');
+        console.error('4. Or set the GOOGLE_APPLICATION_CREDENTIALS environment variable');
+        console.error('\n💡 You can also run in demo mode with: DEMO_MODE=true npm start');
+        process.exit(1);
+    }
+
+    // Load the credentials for your Google Sheet.
+    const auth = new google.auth.GoogleAuth({
+        keyFile: CREDENTIALS_PATH,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    sheets = google.sheets({ version: 'v4', auth });
+
+    main();
 }
 
-// Load the credentials for your Google Sheet.
-const auth = new google.auth.GoogleAuth({
-    keyFile: CREDENTIALS_PATH,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+async function runDemoMode() {
+    try {
+        console.log('🔍 Starting Meta Scraper Automation (DEMO MODE)...');
+        console.log(`📊 Processing ${DEMO_URLS.length} demo URLs...`);
+        
+        const results = [];
+        
+        for (let i = 0; i < DEMO_URLS.length; i++) {
+            const url = DEMO_URLS[i];
+            console.log(`🔄 Processing URL ${i + 1}/${DEMO_URLS.length}: ${url}`);
+            const result = await processUrl(url);
+            results.push({
+                url,
+                metaKeyword: result.metaKeyword,
+                status: result.status,
+                remarks: result.remarks
+            });
+        }
 
-const sheets = google.sheets({ version: 'v4', auth });
+        console.log('\n📋 DEMO RESULTS:');
+        console.log('='.repeat(80));
+        results.forEach((result, index) => {
+            console.log(`${index + 1}. ${result.url}`);
+            console.log(`   Meta Keywords: ${result.metaKeyword}`);
+            console.log(`   Status: ${result.status}`);
+            console.log(`   Remarks: ${result.remarks}`);
+            console.log('');
+        });
+        
+        console.log('✅ Demo completed successfully!');
+
+    } catch (error) {
+        console.error('❌ An error occurred during demo execution:', error);
+        process.exit(1);
+    }
+}
 
 async function main() {
     try {
@@ -78,7 +134,7 @@ async function main() {
 async function getUrlsFromSheet(): Promise<string[]> {
     try {
         const range = `${SHEET_NAME}!A2:A`; // Assumes URLs are in column A, starting from row 2
-        const response = await sheets.spreadsheets.values.get({
+        const response = await sheets!.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
             range,
         });
@@ -86,7 +142,7 @@ async function getUrlsFromSheet(): Promise<string[]> {
         if (!rows || rows.length === 0) {
             return [];
         }
-        return rows.map(row => row[0]).filter(url => url && url.trim() !== '');
+        return rows.map((row: any) => row[0]).filter((url: any) => url && url.trim() !== '');
     } catch (error) {
         console.error('❌ Error reading from spreadsheet:', error);
         throw error;
@@ -140,7 +196,7 @@ async function processUrl(url: string): Promise<{ metaKeyword: string, status: s
 async function updateSheet(data: string[][]) {
     try {
         const range = `${SHEET_NAME}!B2`; // Updates columns B, C, D starting from row 2
-        await sheets.spreadsheets.values.update({
+        await sheets!.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID,
             range,
             valueInputOption: 'USER_ENTERED',
@@ -164,5 +220,3 @@ process.on('SIGTERM', () => {
     console.log('\n🛑 Process terminated');
     process.exit(0);
 });
-
-main();
