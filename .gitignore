@@ -1,6 +1,8 @@
 node_modules/
 dist/
 credentials.json
+credentials.json.backup
+test-new-credentials.js
 .env
 *.log
 .DS_Store
